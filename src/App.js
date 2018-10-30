@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { createStackNavigator, createSwitchNavigator, createBottomTabNavigator } from 'react-navigation';
+import BackgroundGeolocation from "react-native-background-geolocation";
 import Ionicons from 'react-native-vector-icons/Ionicons';
 
 import Home from './screens/Home';
@@ -88,6 +89,51 @@ const RootStack = createSwitchNavigator({
 }, { initialRouteName: 'AuthLoading' });
 
 export default class App extends Component {
+  componentWillMount() {
+    BackgroundGeolocation.onLocation(this.onLocation, this.onError);
+    BackgroundGeolocation.onMotionChange(this.onMotionChange);
+
+    BackgroundGeolocation.ready({
+      // Geolocation Config
+      desiredAccuracy: BackgroundGeolocation.DESIRED_ACCURACY_HIGH,
+      distanceFilter: 10,
+      // Activity Recognition
+      stopTimeout: 1,
+      // Application config
+      debug: true, // <-- enable this hear sounds for background-geolocation life-cycle.
+      logLevel: BackgroundGeolocation.LOG_LEVEL_VERBOSE,
+      stopOnTerminate: false,   // <-- Allow the background-service to continue tracking when user closes the app.
+      startOnBoot: true,        // <-- Auto start tracking when device is powered-up.
+    }, (state) => {
+      console.log("- BackgroundGeolocation is configured and ready: ", state.enabled);
+
+      if (!state.enabled) {
+        ////
+        // 3. Start tracking!
+        //
+        BackgroundGeolocation.start(function () {
+          console.log("- Start success");
+        });
+      }
+    });
+  }
+
+  componentWillUnmount() {
+    BackgroundGeolocation.removeListeners();
+  }
+  
+  onLocation(location) {
+    console.log('[location] -', location);
+  }
+
+  onError(error) {
+    console.warn('[location] ERROR -', error);
+  }
+
+  onMotionChange(event) {
+    console.log('[motionchange] -', event.isMoving, event.location);
+  }
+
   render() {
     return (
       <RootStack />
